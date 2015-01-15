@@ -1,8 +1,8 @@
-get '/categories' do
-  @categories = Category.all
+# get '/categories' do
+#   @categories = Category.all
 
-  erb :"/categories/index"
-end
+#   erb :"/categories/index"
+# end
 
 
 

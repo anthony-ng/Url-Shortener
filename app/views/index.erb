@@ -1,0 +1,19 @@
+<div class="container">
+  <h1>Welcome to URL Shortener!</h1>
+  <p>Hello, Desert Rabbits!</p>
+
+  <form action="/urls" method="post">
+    <input type="text" name="url" value="Enter a URL!" onclick="this.select()">
+    <input type="submit" value="Submit">
+  </form>
+  <br>
+  <% if @url %>
+    <ul>
+      <li>Original url: <a href="http://<%= @url %>"><%= @url %></a></li>
+      <li>Shortened url: <a href="http://<%= @url %>"><%= @short_url %></a></li>
+    </ul>
+    <a href="/">Back</a>
+    <% else %>
+    nothing yet
+  <% end %>
+</div>
