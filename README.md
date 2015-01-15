@@ -1,204 +1,305 @@
-# Craigslist Jr
-
-## Heroku Link[https://craigslist-clone.herokuapp.com]
+# Sinatra Url Shortener
 
 ## Learning Competencies
 
-* Build a wireframe to model application views
-* Use Active Record Associations
-* Implement all four parts of [CRUD][]: create, read, update, and delete.
-* Use the MVC pattern in web applications with proper allocation of code and responsibilities to each layer
+* Test-driven development using rspec and [rack-test][]
+* Map the flow of data through a web application
+* Use redirect
+* Use Active Record callbacks
+* Implement a user authorization scheme to limit unauthorized access to specific pages in a web application
+* Deploy your application to Heroku
 
 ## Summary
 
-We're going to build a simple version of Craigslist.  This will be your first
-web application that uses multiple models.
+We're going to build a simple link shortener, a la [bitly][].
 
-Keep in mind that this is not substantially different than a command-line
-version.  Instead of reading in command-line arguments, we read in URL
-parameters.  Instead of printing to the console, we print HTML and CSS.
-
-We'll only have two models in a one-to-many relationship; no different than
-your command-line TODO app.
-
-The challenge repo includes a Sinatra skeleton as usual.
+You'll have one model named `Url`. The table for this model stores a list of 
+URLs that people have entered.
 
 ## Releases
 
-### Release 0: Wireframe With Your Pair
+### Release 0: Simple Shortener
 
-Never heard of a web wireframe? Check out [what Wikipedia has to
-say][wireframe]. **TL;DR** -- figure out what *pages* your app needs, then
-sketch-out the basic *layout* of each and the *connections* between them.
+Start with the empty Sinatra skeleton.
 
-The application will have two core models: `Article` and `Category`.  An `Article`
-belongs to a `Category` and a `Category` has many `Articles`.
+We have one resource: `Urls`.  For our controllers, we have a route that lists
+`Url` objects and another route that, when POSTed to, creates a `Url` object.
 
-A `Category` is something like "Apartment Rentals" or "Auto Parts."
+Let's test-drive these routes! 
 
-Sit down and work out with your pair what pages you're going to be building.
-At a minimum, you'll need:
+Create a file in the `spec/` directory that corresponds to your controller. 
+Maybe call it something like `index_controller_spec.rb`. Open this file in your 
+editor and write a controller spec for `GET /urls` using the syntax provided by
+[rack-test][]. The [Sinatra testing documentation][] also has documentation
+about how to test a controller.
 
-1. A page that lists all the categories
-2. A page that lists all the articles in a given category
-3. A page that lets someone create a new article in a given category
-4. A page that lets someone who has created a page return to edit/update the page
+Write a failing test first. After you've made it pass by implementing the route,
+write a failing test for the `POST /urls` route. Keep the 
 
-If you're never used Craigslist, it doesn't have any kind of user
-authentication.  Instead, when someone creates an article they're given a special
-"secret" URL that grants them powers to edit that article that looks like
+1. Given
+2. When
+3. Then
 
-```text
-http://craigslist.com/articles/123/edit?key=kjansd812
-```
-
-The key is randomly generated.  The person is given their "edit URL" after they
-successfully create a article.  Anyone with this URL can edit the article.
-
-Think about this like a real web application you might want someone to use.
-What fields should an `Article` have?
-
-A price, probably.  What should the column type of a money-related column be?
-
-An email, so the author of the article could be contacted.  Title, description, etc.
-
-Spend time enumerating the pages, deciding what should be displayed on each
-one.
-
-### Release 1: Implement Controller Structure
-
-Our controller structure will be more complicated.  We'll want URLs that look
-like `/categories/123` and `/articles/456`.  We'll be using both `get` and `post`
-methods.
-
-To create a new `Article`, for example, we'd want to submit an HTML form using the
-POST http method to the `/articles` URL, like so:
-
-```html
-<form action="/articles" method="post">
-  <!-- other form elements here -->
-</form>
-```
-
-and to update an existing record (say with id `1234`) we'd want to post to
-`/articles/1234`.
-
-Controllers should either redirect to another URL or render a page.  Typically,
-a page loaded via HTTP POST will redirect to an appropriate URL if a request
-succeeds and render an error page, otherwise.
-
-#### Organization
-
-Keeping your code organized is an important part of any software project. Most
-important is following a convention, this way a new member of your team won't
-spend days trying to get their bearings.
-
-Developers might disagree on _which_ convention to follow, but they'll all
-agree any convention is better than none.
-
-In this app you'll have both `Article` and `Category` models. The ActiveRecord
-convention is for those to be described in different files:
-
-```text
-app
-| - models
-  | - article.rb
-  | - category.rb
-```
-
-Why not do the same for your controllers? You could have one controller per
-model! Each controller would handle all the requests (CRUD) for each that
-model. E.g.:
-
-
-```text
-app
-| - controllers
-  | - article.rb
-  | - category.rb
-  | - index.rb
-```
-
-You might keep `index.rb` around for requests that aren't for a `Category` or
-`Article`. Your `/` landing page would be a good fit for `index.rb`
-
-The same organizational technique can be applied to your erb views. Instead of
-filling up your `app/views` directory with a half dozen erb templates:
-
-```text
-app
-| - views
-  | - category_index.erb
-  | - category_show.erb
-  | - edit_article.erb
-  | - new_article.erb
-  | - article_show.erb
-  | - articles_index.erb
-```
-
-Why not create an `articles` and a `categories` sub-directory?
-
-```text
-app
-| - views
-  | - articles
-    | - edit.erb
-    | - new.erb
-    | - show.erb
-    | - index.erb
-  | - categories
-    | - index.erb
-    | - show.erb
-```
-
-Now with the sub-directories `articles` and `categories` our erb template names
-follow a convention. Neat! One tip, you'll need to use some (ahem) interesting
-syntax to render a template inside a sub-directory. Here's an example:
+steps in mind, since they'll help you set up the test for your POST route. Here's
+the general format for an empty controller test:
 
 ```ruby
-get "/articles" do
-  @articles = Article.all
-
-  erb :"articles/index"
+require 'spec_helper'
+describe "index_controller" do
+  # specs go here!
 end
 ```
 
-### Ship it!
+We'll also need a route that redirects us to the full (unshortened) URL. As 
+always, write a test first.  If you've never used bitly, use it now to get a 
+feel for how it works.
 
-Make sure the core features work.  We should be able to download your app, run
-it, and do the following:
+Now that you've written tested controllers, the controller methods should look 
+like this:
 
-1. Choose a category to browse
-2. View all articles in a particular category
-3. View a particular article
-4. Create my own article
-5. Edit my articles by using the "secret key" that I get after creating my articles
+```ruby
+get '/' do
+  # let user create new short URL, display a list of shortened URLs
+end
 
-When we say "download your app" we mean "check it out from source, run the
-migrations, and start up the server."  Imagine you're showing this great idea
-off to your boss or a colleage who will help you if they can get it up and
-running.  How might you make sure that *they* are effective with only a basic
-knowledge of the DBCstarter kit?  A good developer makes it easy to get up and
-running because not wasting others' time is a virtue.
+post '/urls' do
+  # create a new Url
+end
 
-### Release 3: Add One Final Feature
+# e.g., /q6bda
+get '/:short_url' do
+  # redirect to appropriate "long" URL
+end
+```
 
-One last feature to add: the "this is awesome" feature.  What does awesome
-mean?  It can mean anything.  The code is awesome, there are new awesome
-features, the design is awesome.
+Use a `before_save` callback in the `Url` model to generate the short URL.
+**Write a test** for the model method you created that generates the short URL,
+but don't worry about testing that the `before_save` callback fires. We'll trust 
+that ActiveRecord has been thoroughly tested.
 
-This isn't a race; there's no finish line, only a deadline (tomorrow, duh!).
-Take the time to make this application something you're proud of.  It doesn't
-have to be flashy &mdash; it could be a difficult technical hurdle you
-overcame.
+### Release 1:  Add a Counter!
 
-Bring 100% of your best self to this feature.  Make something meaningful; make
-something great.
+Add a `click_count` field to your `urls` table, which keeps track of how many
+times someone has visited the shortened URL.  Add code to the appropriate place
+in your controller code so that any time someone hits a short URL the counter
+for the appropriate `Url` is incremented by 1. You can (and should) also write 
+a test for this.
+
+### Release 2: User Authentication
+
+Now it's time for things to get complicated. Let's implement a login and logout
+feature for our URL shortener!
+
+The core flow of the app should remain the same, however a person might choose
+to log in or create an account. In the event that they're logged in when they shorten
+a URL, this `Url` should now be associated with their user account.  In other words,
+a `Url` belongs to a `User` and a `User` has many `Urls`.
+
+**Note**: Don't worry about implement the above user-centric logic yet.  First
+get all the URL shortening and user authentication code working.  **Feel free to 
+spike on this** and forego TDD while you figure out user authentication, we'll 
+come back to repair broken tests in a bit. Make sure people can log in and can 
+shorten URLs regardless of whether they're logged in or not.
+
+There's going to be a lot going on in your controller! Try to keep the code as
+readable and organized as possible. A file structure like this might make sense:
+
+1. `app/controllers/urls.rb`, which contains the routes related to listing, creating, and redirecting `Url` objects
+2. `app/controllers/sessions.rb`, which contains the routes related to logging in and logging out
+3. `app/controllers/users.rb`, which contains the routes related to creating, displaying, and editing users
+
+### Release 3: Conditional Logic
+
+Now that you've got basic user authentication and URL shortening working, it's
+time to stitch these features together. Depending on whether a user is signed
+in, your site will change dynamically.
+
+People should be able to create short URLs regardless of whether they're logged
+in or not (that is, the `user_id` field on the `urls` table could possibly be
+`NULL`).
+
+However, if a user *is* logged in, when we create a URL it should set the
+`user_id` to whatever the `user_id` of the currently logged-in user is.  This
+information *should not* be a part of the form that a user submits &mdash; it
+would be trivial for someone to change the content of the form and submit as
+any user. The information should, instead, be stored in the users' sessions.
+
+Users should now be able to view their URLs on their profile page, which should
+look like this:
+
+```ruby
+get '/users/:id' do
+end
+```
+
+This should display a user's profile, which lists all the links that a 
+particular user has created.  If I'm viewing my *own* profile page, show the 
+number of clicks next to each link so I can see how awesome my link-sharing 
+skills are.
+
+Since you'll be checking the session in every route, your routes are probably pretty
+repetetive. But theres a better way! You can create helper methods to DRY up your
+controller and view code. You could use something like this:
+
+```ruby
+helpers do
+  # This will return the current user, if they exist
+  # Replace with code that works with your application
+  def current_user
+    if session[:user_id]
+      @current_user ||= User.find_by_id(session[:user_id])
+    end
+  end
+
+  # Returns true if current_user exists, false otherwise
+  def logged_in?
+    !current_user.nil?
+  end
+end
+```
+
+Your controller can now call `current_user` to get the currently authenticated
+user, if they exist.  This means we don't have to rely on user-submitted data
+to determine what user created a short URL.
+
+
+
+### Release 4: Fix Your Broken Tests and Write New Ones!
+All of this dynamic content has probably caused your tests to break. But that's
+ok! They can be fixed! You can fake a user's session using rack-test. The 'GET'
+and 'POST' methods take an optional third argument that corresponds to the 
+rack environment hash (where information about sessions is stored). It looks
+something like this:
+
+```ruby
+it "should create a new post" do
+  fake_params = { title: "some title", content: "some content" }
+  fake_session = { 'rack.session' => { user_id: 20 } }
+  expect{
+    post '/some_route', fake_params, fake_session
+  }.to change{ Post.count }.by(1)
+end
+```
+
+You should also write tests to check each branch of your conditionals (if/else)
+that correspond to user authentication.
+
+
+### Release 5: Add Validations (Optional)
+
+Test-drive adding a validation to your `Url` model so that only `Urls` with 
+valid URLs are saved to the database. Read up on [ActiveRecord validations][].
+You can use ActiveRecord's `valid?` instance method in your test to check if 
+the validations are working.
+
+What constitutes a "valid URL" is up to you.  It's a sliding scale, from
+validations that would permit lots of invalid URLs to validations that might
+reject lots of valid URLs.  When you get into it you'll see that expressing the
+fact "x is a valid URL" in Ruby Land or SQL Land is never perfect.
+
+For example, the valid URL could range across:
+
+**A valid URL is...**
+
+* Any non-empty string
+* Any non-empty string that starts with "http://" or "https://"
+* Any string that the [Ruby URI module][URI module] says is valid
+* Any URL-looking thing which responds to a HTTP request, i.e., we actually check to see if the URL is accessible via HTTP
+
+Some of these are easily expressible in SQL Land. Some of these are hard to
+express in SQL Land, but ActiveRecord comes with pre-built validation helpers
+that make it easy to express in Ruby Land. Others require [custom
+validations][] that express logic unique to our application domain.
+
+The rule of thumb is that where we can, we want to always express constraints
+in Ruby Land and also express them in SQL Land where feasible.
+
+
+### Release 6: Add Error Handling (Optional)
+
+When you try to save (create or update) an ActiveRecord object that has invalid
+data, ActiveRecord will fail. Some methods like `create!` and `save!` throw an
+exception. Others like `create` (without the `!`, the bang) return the resulting
+object whether the object was saved successfully to the database or not, while
+`save` will return `false` if `perform_validation` is true and any validations
+fail. See [create][] and [save][] for more information.
+
+Remember, you can call [valid? or invalid?][valid invalid] on an ActiveRecord
+object to see whether its data is valid or invalid.
+
+Use `valid?`, `invalid?`, and the [errors][] method to display a helpful error message if a user
+enters an invalid URL. This will give them a change to correct their error.
+
+## Optimize Your Learning
+
+### More on Validations, Constraints, and Database Consistency
+
+We often want to put constraints on what sort of data can go into our database.
+This way we can guarantee that all data in the database conforms to certain
+standards, e.g., there are no users missing an email address.  Guarantees of
+this kind &mdash; ensuring that the data in our database is never confusing or
+contradictory or partially changed or otherwise invalid &mdash; are called
+**consistency**.
+
+If we think of this as a fact from Fact Land, these constraints look like:
+
+* A user must have a first\_name
+* A user must have an email
+* Two user's can't have the same email address, or equivalently, each user's email must be unique
+* A Craigslist post's URL must be a valid URL, for some reasonable definition of valid
+
+These facts can be recorded in both SQL Land and in Ruby Land, like this:
+
+<table class="table table-bordered table-striped">
+  <tr>
+    <th>Fact Land</th>
+    <th>SQL Land</th>
+    <th>Ruby Land</th>
+  </tr>
+  <tr>
+    <td>A user must have an email address</td>
+    <td><code>NOT NULL</code> constraint on <code>email</code> field</td>
+    <td><code>validates :email, :presence => true</code></td>
+  </tr>
+  <tr>
+    <td>A user must have a first name</td>
+    <td><code>NOT NULL</code> constraint on <code>first_name</code> field</td>
+    <td><code>validates :first_name, :presence => true</code></td>
+  </tr>
+  <tr>
+    <td>A user's email address must be unique</td>
+    <td><code>UNIQUE INDEX</code> on <code>email</code> field</td>
+    <td><code>validates :email, :uniqueness => true</code></td>
+  </tr>
+</table>
+
+### Release 7: Deployment (Optional)
+
+You're feature complete with 100% test coverage. It's time to push this thing into
+production! Get the app up on Heroku, and call it a night.
 
 ## Resources
 
-* Create, Read, Update, Delete ([CRUD][])
-* [Wikipedia: Wireframe][wireframe]
+* [Bit.ly, a url shortening service][bitly]
+* [ActiveRecord validations][]
+* [URI module][]
+* [Active record custom validations][custom validations]
+* [ActiveRecord create][create]
+* [ActiveRecord save][save]
+* [ActiveRecord's valid? &amp; invalid?][valid invalid]
+* [ActiveRecord's errors object][errors]
+* [HTTP status codes][]
+* [HTTP status cats][]
 
-[CRUD]: http://en.wikipedia.org/wiki/Create,_read,_update_and_delete
-[wireframe]: http://en.wikipedia.org/wiki/Website_wireframe
+[bitly]: http://bitly.com/
+[ActiveRecord validations]: http://guides.rubyonrails.org/active_record_validations.html
+[URI module]: http://www.ruby-doc.org/stdlib-1.9.3/libdoc/uri/rdoc/URI.html
+[custom validations]: http://guides.rubyonrails.org/active_record_validations.html#performing-custom-validations
+[create]: http://apidock.com/rails/ActiveRecord/Base/create/class
+[Sinatra testing documentation]: http://www.sinatrarb.com/testing.html#rspec
+[save]: http://apidock.com/rails/ActiveRecord/Base/save
+[valid invalid]: http://guides.rubyonrails.org/active_record_validations.html#valid-questionmark-and-invalid-questionmark
+[errors]: http://guides.rubyonrails.org/active_record_validations.html#validations-overview-errors
+[HTTP status codes]: http://en.wikipedia.org/wiki/List_of_HTTP_status_codes
+[HTTP status cats]: http://httpcats.herokuapp.com/
+[rack-test]: https://github.com/brynary/rack-test#readme
